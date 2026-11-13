@@ -1,0 +1,116 @@
+name: InventoryHub CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  IMAGE_NAME: inventoryhub
+
+jobs:
+  # ------------------------------------------------------------------
+  # Build (and test, when a test project exists in the repo)
+  # ------------------------------------------------------------------
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Test (only when test projects exist)
+        shell: bash
+        run: |
+          TEST_PROJECTS=$(find . -name "*.Tests.csproj" -o -name "*Test*.csproj" | grep -v obj || true)
+          if [ -n "$TEST_PROJECTS" ]; then
+            dotnet test -c Release --no-build
+          else
+            echo "No test projects found — skipping test step."
+          fi
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_NAME }}:${{ github.sha }} .
+
+  # ------------------------------------------------------------------
+  # Deploy to Azure (Container Apps) — runs on pushes to main only.
+  # Required GitHub secrets:
+  #   AZURE_CREDENTIALS        (service principal JSON from `az ad sp create-for-rbac`)
+  #   ACR_LOGIN_SERVER         e.g. myregistry.azurecr.io
+  #   AZURE_RESOURCE_GROUP     e.g. inventoryhub-rg
+  #   AZURE_CONTAINERAPP_NAME  e.g. inventoryhub
+  # ------------------------------------------------------------------
+  deploy-azure:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and push image to Azure Container Registry
+        run: |
+          az acr login --name ${{ secrets.ACR_LOGIN_SERVER }}
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name ${{ secrets.AZURE_CONTAINERAPP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  # ------------------------------------------------------------------
+  # Deploy to AWS (ECS Fargate) — runs on pushes to main only.
+  # Required GitHub secrets:
+  #   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
+  #   ECR_REPOSITORY           e.g. inventoryhub
+  #   ECS_CLUSTER, ECS_SERVICE e.g. inventoryhub-cluster / inventoryhub-service
+  # ------------------------------------------------------------------
+  deploy-aws:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image to ECR
+        run: |
+          IMAGE=${{ steps.ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+          docker build -t $IMAGE .
+          docker push $IMAGE
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy to ECS Fargate
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --service ${{ secrets.ECS_SERVICE }} \
+            --force-new-deployment
