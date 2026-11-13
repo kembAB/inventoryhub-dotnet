@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InventoryHub — Product Inventory Manager</title>
+<style>
+  :root { --blue:#1f6feb; --dark:#0d2137; --light:#f4f7fb; --red:#c0392b; --amber:#b9770e; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background: var(--light); color:#222; }
+  header { background: var(--dark); color:#fff; padding: 18px 28px; }
+  header h1 { margin:0; font-size: 24px; }
+  header p { margin:4px 0 0; color:#bcd2ea; font-size: 14px; }
+  main { max-width: 1020px; margin: 24px auto; padding: 0 16px 40px; }
+  .card { background:#fff; border-radius:10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding:20px; margin-bottom:20px; }
+  h2 { margin-top:0; font-size:18px; }
+  table { width:100%; border-collapse: collapse; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid #e5eaf1; font-size:14px; }
+  th { background:#eef3fa; }
+  tr.low td { background:#fff7e6; }
+  tr.out td { background:#fdecea; }
+  .badge { padding:2px 8px; border-radius:10px; font-size:12px; font-weight:600; }
+  .badge.low { background:#fdebd0; color:var(--amber); }
+  .badge.out { background:#f5b7b1; color:var(--red); }
+  .badge.ok { background:#d5f5e3; color:#1e8449; }
+  form { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+  form label { font-size:13px; font-weight:600; display:block; margin-bottom:4px; }
+  form input { width:100%; padding:8px; border:1px solid #c9d4e4; border-radius:6px; font-size:14px; }
+  button { background: var(--blue); color:#fff; border:0; border-radius:6px; padding:8px 14px; font-size:14px; cursor:pointer; }
+  button:hover { opacity:.9; }
+  button.danger { background: var(--red); }
+  button.grey { background:#5d6d7e; }
+  .stock-edit { display:flex; gap:6px; align-items:center; }
+  .stock-edit input { width:70px; padding:6px; border:1px solid #c9d4e4; border-radius:6px; }
+  #msg { min-height:20px; font-size:14px; color:#1e8449; }
+  #msg.error { color: var(--red); }
+  .form-actions { grid-column: 1 / -1; display:flex; gap:10px; }
+  @media (max-width: 720px) { form { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>InventoryHub</h1>
+  <p>Product Inventory Manager — ASP.NET Core 8 Web API + EF Core, one deployable app</p>
+</header>
+<main>
+  <div class="card">
+    <h2 id="formTitle">Add a product</h2>
+    <form id="productForm">
+      <div><label for="name">Name</label><input id="name" required maxlength="120"></div>
+      <div><label for="sku">SKU</label><input id="sku" required maxlength="40"></div>
+      <div><label for="category">Category</label><input id="category" required maxlength="60"></div>
+      <div><label for="price">Price</label><input id="price" type="number" step="0.01" min="0.01" required></div>
+      <div><label for="stock">Stock quantity</label><input id="stock" type="number" step="1" min="0" required></div>
+      <div class="form-actions">
+        <button type="submit" id="submitBtn">Add product</button>
+        <button type="button" class="grey" id="cancelEdit" style="display:none">Cancel edit</button>
+      </div>
+    </form>
+    <p id="msg"></p>
+  </div>
+
+  <div class="card">
+    <h2>Products <span id="count" style="color:#5d6d7e; font-size:14px"></span></h2>
+    <label style="font-size:14px">Low-stock threshold:
+      <input id="threshold" type="number" value="5" min="1" style="width:64px; padding:5px">
+    </label>
+    <button class="grey" id="showLow" style="margin-left:8px">Show low stock only</button>
+    <button class="grey" id="showAll" style="margin-left:8px">Show all</button>
+    <table>
+      <thead>
+        <tr><th>Id</th><th>Name</th><th>SKU</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Edit stock</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+const api = '/api/products';
+let editingId = null;
+let lowOnly = false;
+
+const $ = id => document.getElementById(id);
+const msg = (text, isError) => { $('msg').textContent = text; $('msg').className = isError ? 'error' : ''; };
+
+async function load() {
+  const threshold = parseInt($('threshold').value || '5', 10);
+  const url = lowOnly ? `${api}/low-stock?threshold=${threshold}` : api;
+  const res = await fetch(url);
+  const products = await res.json();
+  $('count').textContent = `(${products.length})`;
+  $('rows').innerHTML = products.map(p => {
+    const status = p.stockQuantity === 0 ? '<span class="badge out">Out of stock</span>'
+      : p.stockQuantity < threshold ? '<span class="badge low">Low stock</span>'
+      : '<span class="badge ok">In stock</span>';
+    const rowClass = p.stockQuantity === 0 ? 'out' : p.stockQuantity < threshold ? 'low' : '';
+    return `<tr class="${rowClass}">
+      <td>${p.id}</td><td>${p.name}</td><td>${p.sku}</td><td>${p.category}</td>
+      <td>$${Number(p.price).toFixed(2)}</td><td>${p.stockQuantity}</td><td>${status}</td>
+      <td><div class="stock-edit">
+        <input type="number" min="0" value="${p.stockQuantity}" id="stock-${p.id}">
+        <button onclick="setStock(${p.id})">Set</button>
+      </div></td>
+      <td>
+        <button class="grey" onclick="startEdit(${p.id})">Edit</button>
+        <button class="danger" onclick="removeProduct(${p.id})">Delete</button>
+      </td></tr>`;
+  }).join('');
+}
+
+async function setStock(id) {
+  const value = parseInt($('stock-' + id).value, 10);
+  const res = await fetch(`${api}/${id}/stock`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stockQuantity: value })
+  });
+  if (res.ok) { msg(`Stock updated for product ${id}.`); load(); }
+  else msg('Could not update stock.', true);
+}
+
+async function startEdit(id) {
+  const res = await fetch(`${api}/${id}`);
+  const p = await res.json();
+  editingId = id;
+  $('name').value = p.name; $('sku').value = p.sku; $('category').value = p.category;
+  $('price').value = p.price; $('stock').value = p.stockQuantity;
+  $('formTitle').textContent = `Edit product ${id}`;
+  $('submitBtn').textContent = 'Save changes';
+  $('cancelEdit').style.display = 'inline-block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function stopEdit() {
+  editingId = null;
+  $('productForm').reset();
+  $('formTitle').textContent = 'Add a product';
+  $('submitBtn').textContent = 'Add product';
+  $('cancelEdit').style.display = 'none';
+}
+
+async function removeProduct(id) {
+  if (!confirm(`Delete product ${id}?`)) return;
+  const res = await fetch(`${api}/${id}`, { method: 'DELETE' });
+  if (res.ok) { msg(`Product ${id} deleted.`); load(); }
+  else msg('Could not delete the product.', true);
+}
+
+$('cancelEdit').addEventListener('click', stopEdit);
+$('showLow').addEventListener('click', () => { lowOnly = true; load(); });
+$('showAll').addEventListener('click', () => { lowOnly = false; load(); });
+$('threshold').addEventListener('change', load);
+
+$('productForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = {
+    name: $('name').value.trim(),
+    sku: $('sku').value.trim(),
+    category: $('category').value.trim(),
+    price: parseFloat($('price').value),
+    stockQuantity: parseInt($('stock').value, 10)
+  };
+  const url = editingId ? `${api}/${editingId}` : api;
+  const method = editingId ? 'PUT' : 'POST';
+  const res = await fetch(url, {
+    method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    msg(editingId ? `Product ${editingId} updated.` : 'Product added.');
+    stopEdit(); load();
+  } else {
+    const data = await res.json().catch(() => null);
+    msg((data && data.message) || 'The product could not be saved. Check the values.', true);
+  }
+});
+
+load();
+</script>
+</body>
+</html>
