@@ -1,0 +1,23 @@
+# InventoryHub — Kubernetes Ingress (NGINX ingress controller)
+# Routes public traffic for the host to the inventoryhub Service.
+# On AKS use the NGINX or Application Gateway ingress; on EKS the same
+# manifest works with the NGINX controller, or swap the class for ALB.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inventoryhub
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: inventoryhub.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inventoryhub
+                port:
+                  number: 80

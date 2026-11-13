@@ -1,0 +1,10 @@
+# InventoryHub — ConfigMap: non-secret configuration.
+# Switching DatabaseProvider here is the ONLY change needed to move the
+# same container image from SQLite to PostgreSQL.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inventoryhub-config
+data:
+  DatabaseProvider: "Npgsql"
+  LowStockThreshold: "5"
