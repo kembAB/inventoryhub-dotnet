@@ -1,0 +1,192 @@
+======================================================================
+InventoryHub — REAL RUN OUTPUT
+Date: Fri Nov 13 00:03:48 UTC 2026
+SDK: 8.0.428
+======================================================================
+
+--- Server startup log ---
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (89ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      PRAGMA journal_mode = 'wal';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "Products" (
+          "Id" INTEGER NOT NULL CONSTRAINT "PK_Products" PRIMARY KEY AUTOINCREMENT,
+          "Name" TEXT NOT NULL,
+          "Sku" TEXT NOT NULL,
+          "Category" TEXT NOT NULL,
+          "Price" decimal(18,2) NOT NULL,
+          "StockQuantity" INTEGER NOT NULL,
+          "CreatedAt" TEXT NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_Products_Sku" ON "Products" ("Sku");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Products" AS "p")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (13ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (Size = 11), @p2='?' (DbType = DateTime), @p3='?' (Size = 14), @p4='?' (DbType = Decimal), @p5='?' (Size = 7), @p6='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Products" ("Id", "Category", "CreatedAt", "Name", "Price", "Sku", "StockQuantity")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (Size = 11), @p2='?' (DbType = DateTime), @p3='?' (Size = 19), @p4='?' (DbType = Decimal), @p5='?' (Size = 7), @p6='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Products" ("Id", "Category", "CreatedAt", "Name", "Price", "Sku", "StockQuantity")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (Size = 8), @p2='?' (DbType = DateTime), @p3='?' (Size = 15), @p4='?' (DbType = Decimal), @p5='?' (Size = 7), @p6='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Products" ("Id", "Category", "CreatedAt", "Name", "Price", "Sku", "StockQuantity")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (Size = 11), @p2='?' (DbType = DateTime), @p3='?' (Size = 21), @p4='?' (DbType = Decimal), @p5='?' (Size = 7), @p6='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Products" ("Id", "Category", "CreatedAt", "Name", "Price", "Sku", "StockQuantity")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (Size = 11), @p2='?' (DbType = DateTime), @p3='?' (Size = 12), @p4='?' (DbType = Decimal), @p5='?' (Size = 7), @p6='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Products" ("Id", "Category", "CreatedAt", "Name", "Price", "Sku", "StockQuantity")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (Size = 5), @p2='?' (DbType = DateTime), @p3='?' (Size = 27), @p4='?' (DbType = Decimal), @p5='?' (Size = 7), @p6='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Products" ("Id", "Category", "CreatedAt", "Name", "Price", "Sku", "StockQuantity")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://127.0.0.1:5099
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/hatch/workspace/inventoryhub-dotnet
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "p"."Id", "p"."Category", "p"."CreatedAt", "p"."Name", "p"."Price", "p"."Sku", "p"."StockQuantity"
+      FROM "Products" AS "p"
+      ORDER BY "p"."Id"
+
+--- GET /api/products (seed data) ---
+[
+    {
+        "id": 1,
+        "name": "Wireless Mouse",
+        "sku": "WM-1001",
+        "category": "Peripherals",
+        "price": 24.99,
+        "stockQuantity": 140,
+        "createdAt": "2026-01-05T09:00:00"
+    },
+    {
+        "id": 2,
+        "name": "Mechanical Keyboard",
+        "sku": "KB-2001",
+        "category": "Peripherals",
+        "price": 89.5,
+        "stockQuantity": 64,
+        "createdAt": "2026-01-05T09:00:00"
+    },
+    {
+        "id": 3,
+        "name": "27-inch Monitor",
+        "sku": "MN-2701",
+        "category": "Displays",
+        "price": 219.99,
+        "stockQuantity": 23,
+        "createdAt": "2026-01-06T09:00:00"
+    },
+    {
+        "id": 4,
+        "name": "USB-C Docking Station",
+        "sku": "DK-3001",
+        "category": "Accessories",
+        "price": 129,
+        "stockQuantity": 4,
+        "createdAt": "2026-01-06T09:00:00"
+    },
+    {
+        "id": 5,
+        "name": "Laptop Stand",
+        "sku": "LS-4001",
+        "category": "Accessories",
+        "price": 39.95,
+        "stockQuantity": 0,
+        "createdAt": "2026-01-07T09:00:00"
+    },
+    {
+        "id": 6,
+        "name": "Noise-Cancelling Headphones",
+        "sku": "HP-5001",
+        "category": "Audio",
+        "price": 149.99,
+        "stockQuantity": 37,
+        "createdAt": "2026-01-07T09:00:00"
+    }
+]
+
+--- POST /api/products (create) ---
+Request body: {"name":"Webcam HD 1080p","sku":"WC-6001","category":"Peripherals","price":59.99,"stockQuantity":3}
+{"id":7,"name":"Webcam HD 1080p","sku":"WC-6001","category":"Peripherals","price":59.99,"stockQuantity":3,"createdAt":"2026-11-13T00:03:48.764988Z"}
+HTTP status: 201
+
+
+--- GET /api/products/low-stock?threshold=5 ---
+[
+    {
+        "id": 5,
+        "name": "Laptop Stand",
+        "sku": "LS-4001",
+        "category": "Accessories",
+        "price": 39.95,
+        "stockQuantity": 0,
+        "createdAt": "2026-01-07T09:00:00"
+    },
+    {
+        "id": 7,
+        "name": "Webcam HD 1080p",
+        "sku": "WC-6001",
+        "category": "Peripherals",
+        "price": 59.99,
+        "stockQuantity": 3,
+        "createdAt": "2026-11-13T00:03:48.764988"
+    },
+    {
+        "id": 4,
+        "name": "USB-C Docking Station",
+        "sku": "DK-3001",
+        "category": "Accessories",
+        "price": 129,
+        "stockQuantity": 4,
+        "createdAt": "2026-01-06T09:00:00"
+    }
+]
+
+--- PATCH /api/products/5/stock {stockQuantity: 25} ---
+{
+    "id": 5,
+    "name": "Laptop Stand",
+    "sku": "LS-4001",
+    "category": "Accessories",
+    "price": 39.95,
+    "stockQuantity": 25,
+    "createdAt": "2026-01-07T09:00:00"
+}
+
+--- POST invalid product (validation check: negative price) ---
+HTTP status: 400
+
+--- DELETE /api/products/7 ---
+HTTP status: 204
+
+--- GET / (frontend index page, first 12 lines) ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InventoryHub — Product Inventory Manager</title>
+<style>
+  :root { --blue:#1f6feb; --dark:#0d2137; --light:#f4f7fb; --red:#c0392b; --amber:#b9770e; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background: var(--light); color:#222; }
+  header { background: var(--dark); color:#fff; padding: 18px 28px; }
+  header h1 { margin:0; font-size: 24px; }
